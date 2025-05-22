@@ -69,7 +69,7 @@ For a quick start without installing the full application, you can use the singl
 
 ### Method 3: Download Executable (Windows)
 
-1. Download the latest release from the [Releases](https://github.com/AlgoVoyager/gemtype/releases) page
+1. Download the latest release from the [Here](https://algovoyagers.vercel.app/tools/1-gemtype) page
 2. Run the installer or extract the portable version
 3. Launch `GemType.exe`
 
