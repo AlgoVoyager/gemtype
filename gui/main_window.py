@@ -240,18 +240,18 @@ class MainWindow(QMainWindow):
                 background-color: #f5f5f5;
             }
             QPushButton {
-                background-color: #4285f4;
-                color: white;
+                background-color: #ffc800;
+                color: #000000;
                 border: none;
                 padding: 8px 16px;
                 border-radius: 4px;
                 font-weight: bold;
             }
             QPushButton:hover {
-                background-color: #3367d6;
+                background-color: #e6b400;
             }
             QPushButton:pressed {
-                background-color: #2a56c6;
+                background-color: #cc9f00;
             }
             QTabWidget::pane {
                 border: 1px solid #e0e0e0;
@@ -461,7 +461,7 @@ class MainWindow(QMainWindow):
         
         # Visit website button
         website_btn = QPushButton("Visit Our Website - Docs")
-        website_btn.clicked.connect(lambda: QDesktopServices.openUrl(QUrl("https://algovoyagers.vercel.app/tools/gemtype")))
+        website_btn.clicked.connect(lambda: QDesktopServices.openUrl(QUrl("https://algovoyagers.vercel.app/tools/1-gemtype")))
         
         # Credits
         credits = QLabel(
@@ -505,7 +505,7 @@ class MainWindow(QMainWindow):
             "API Key Required",
             "GemType brings the power of Google's Gemini AI to your fingertips.<br>"
             " 🖱️ <b>How to use:</b> <br>"
-            "1. Please set your Google Gemini API key in the Settings to use GemType.<br>"
+            "1. Please set your Google Gemini API key in Settings before starting the service.\n\n"
             "You can get an API key from: <a href='https://aistudio.google.com/app/apikey'>Google AI Studio</a><br><br>"
             "2. Type and copy your text anywhere<br>"
             "3. Press <b>Ctrl+Alt+Space</b> (or your custom hotkey)<br>"

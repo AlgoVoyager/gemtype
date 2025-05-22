@@ -88,7 +88,17 @@ class SettingsDialog(QDialog):
         
         # Model selection
         self.model_combo = QComboBox()
-        self.model_combo.addItems(["gemini-2.5-flash-preview-05-20", "gemini-1.5-pro"])
+        self.model_combo.addItems([
+            "gemini-2.5-flash-preview-05-20",
+            "gemini-2.5-flash-preview-04-17",
+            "gemini-2.0-flash",
+            "gemini-2.0-flash-lite",
+            "gemini-1.5-flash",
+            "gemini-1.5-flash-8b",
+            "gemma-3-27b-it",
+            "gemini-2.5-pro-preview-05-06",
+            "gemini-1.5-pro",
+            ])
         self.model_combo.currentTextChanged.connect(self.on_settings_changed)
         
         model_label = QLabel("<b>Model:</b>")
@@ -97,6 +107,33 @@ class SettingsDialog(QDialog):
         
         # Add API group to API tab
         api_layout.addWidget(api_group)
+        api_layout.addStretch()
+
+        # info group
+        info_group = QGroupBox("Info")
+        info_layout = QVBoxLayout()
+        
+        info_text = QLabel(
+            "API Key is required to use the service.\n<br> "
+            "You can switch to different API models<br>"
+            "Which most of listed models here offers Free Tier<br>"
+            "Each Model can have own features and capabilities<br>"
+            "As well as different pricing and RPM (Requests Per Minute) limits<br>"
+            "You can find more information about the models in Docs below."
+        )
+        info_text.setWordWrap(True)
+        info_text.setTextFormat(Qt.RichText)
+        info_text.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        info_layout.addWidget(info_text)
+
+        website_btn = QPushButton("Google AI for Developers - Docs")
+        website_btn.clicked.connect(lambda: QDesktopServices.openUrl(QUrl("https://ai.google.dev/gemini-api/docs/rate-limits#free-tier")))
+        info_layout.addWidget(website_btn, 0, Qt.AlignLeft)
+        
+        info_group.setLayout(info_layout)
+        
+        # Add info group to API tab
+        api_layout.addWidget(info_group)
         api_layout.addStretch()
         
         # ===== Hotkey Tab =====
@@ -198,7 +235,8 @@ class SettingsDialog(QDialog):
         """Apply custom styles to the dialog."""
         self.setStyleSheet("""
             QDialog {
-                background-color: #f5f5f5;
+                background-color: #1e1e2e;
+                color: #e0e0e0;
             }
             QGroupBox {
                 border: 1px solid #e0e0e0;
