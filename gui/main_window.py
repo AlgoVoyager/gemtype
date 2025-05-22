@@ -213,12 +213,11 @@ class MainWindow(QMainWindow):
         """Initialize the hotkey manager."""
         from core.hotkey import HotkeyManager
         
-        # Initialize hotkey manager with the configured hotkey
         self.hotkey_manager = HotkeyManager(config.get("hotkey", "ctrl+alt+space"))
         self.hotkey_manager.hotkey_triggered.connect(self.on_hotkey_triggered)
         
-        # Start the hotkey manager if auto-start is enabled
-        if config.get("auto_start", True):
+        # Only start the hotkey manager if API key is set
+        if config.get("api_key"):
             try:
                 self.hotkey_manager.start()
                 self.status_indicator.setStyleSheet("color: #4CAF50; font-size: 16px;")
@@ -308,14 +307,23 @@ class MainWindow(QMainWindow):
     
     def on_hotkey_triggered(self):
         """Handle hotkey press event."""
+        logger.info("Hotkey triggered, processing...")
+        
         try:
-            logger.info("Hotkey triggered, processing...")
-            
             # Get selected text (if any)
             import pyperclip
             original_clipboard = pyperclip.paste()
             
             try:
+                # Show notification
+                if self.tray_icon and config.get("show_notifications", True):
+                    self.tray_icon.showMessage(
+                        "GemType",
+                        "Processing your request...",
+                        QSystemTrayIcon.Information,
+                        2000
+                    )
+                
                 # Simulate Ctrl+C to copy selected text
                 pyperclip.copy('')  # Clear clipboard first
                 import pyautogui
@@ -327,75 +335,89 @@ class MainWindow(QMainWindow):
                 
                 # Get the selected text
                 prompt_text = pyperclip.paste().strip()
-                logger.info(f"Selected text: {prompt_text[:100]}...")  # Log first 100 chars
+                logger.info(f"Selected text: {prompt_text[:100]}{'...' if len(prompt_text) > 100 else ''}")
                 
                 if not prompt_text:
                     logger.info("No text selected, will use empty prompt")
                 
                 # Generate response
                 from core.gemini import GeminiClient
-                client = GeminiClient(config.get("api_key"), config.get("model"))
-                response = client.generate_response(prompt_text or "send me this msg: copy your text to clipboard and try again.")
+                from google.api_core import exceptions as google_exceptions
                 
-                if response.startswith("❌"):
-                    logger.error(f"Error generating response: {response}")
+                try:
+                    client = GeminiClient(config.get("api_key"), config.get("model"))
+                    response = client.generate_response(prompt_text or "send me this msg: copy your text to clipboard and try again.")
+                    
+                    if response.startswith("❌"):
+                        error_msg = response.replace("❌ Error: ", "")
+                        logger.error(f"Error generating response: {error_msg}")
+                        
+                        if "429" in error_msg or "quota" in error_msg.lower():
+                            self._handle_api_error(
+                                "Quota Exceeded",
+                                "You've exceeded your current quota or rate limit.\n\n"
+                                "Please check your Google Cloud Console or try again later."
+                            )
+                            return
+                    
+                    logger.info("Response generated, pasting...")
+                    
+                    # Type the response
+                    pyperclip.copy(response)
+                    pyautogui.hotkey('ctrl', 'v')
+                    
+                    # Small delay to ensure paste completes
+                    time.sleep(0.2)
+                    
                     if config.get("show_notifications", True):
                         self.tray_icon.showMessage(
-                            "GemType Error",
-                            "Failed to generate response. Check logs for details.",
-                            QSystemTrayIcon.Critical
+                            "GemType",
+                            "Response generated and pasted",
+                            QSystemTrayIcon.Information,
+                            2000
                         )
-                    return
-                
-                logger.info("Response generated, pasting...")
-                
-                # Type the response
-                pyperclip.copy(response)
-                pyautogui.hotkey('ctrl', 'v')
-                
-                # Small delay to ensure paste completes
-                time.sleep(0.2)
-                
-                # Restore original clipboard
-                pyperclip.copy(original_clipboard)
-                
-                logger.info("Response pasted successfully")
-                
-                if config.get("show_notifications", True):
-                    self.tray_icon.showMessage(
-                        "GemType",
-                        "Response generated and pasted",
-                        QSystemTrayIcon.Information,
-                        2000
-                    )
                     
-            except Exception as e:
-                logger.error(f"Error in hotkey handler: {e}", exc_info=True)
-                if config.get("show_notifications", True):
-                    self.tray_icon.showMessage(
-                        "GemType Error",
-                        f"Error: {str(e)}",
-                        QSystemTrayIcon.Critical
+                except google_exceptions.ResourceExhausted as e:
+                    self._handle_api_error(
+                        "Quota Exceeded",
+                        "You've exceeded your current quota for the Gemini API.\n\n"
+                        "Please check your Google Cloud Console to manage your quota or upgrade your plan."
                     )
-                # Restore clipboard on error
+                except google_exceptions.PermissionDenied as e:
+                    self._handle_api_error(
+                        "Permission Denied",
+                        "Your API key doesn't have the required permissions.\n\n"
+                        "Please check your API key permissions in Google Cloud Console."
+                    )
+                except google_exceptions.Unauthenticated as e:
+                    self._handle_api_error(
+                        "Authentication Failed",
+                        "Invalid or expired API key.\n\n"
+                        "Please check your API key in the settings and try again."
+                    )
+                except Exception as e:
+                    logger.exception("Unexpected error in response generation")
+                    self._handle_api_error(
+                        "Error",
+                        f"An unexpected error occurred: {str(e)}"
+                    )
+                
+            except Exception as e:
+                logger.exception("Error in clipboard handling")
+                self._handle_api_error(
+                    "Error",
+                    f"Failed to process clipboard: {str(e)}"
+                )
+            finally:
+                # Always restore original clipboard
                 pyperclip.copy(original_clipboard)
                 
         except Exception as e:
             logger.critical(f"Critical error in hotkey handler: {e}", exc_info=True)
-
-    # def on_hotkey_triggered(self):
-        """Handle hotkey trigger event."""
-        # Show a notification
-        if self.tray_icon and config.get("show_notifications", True):
-            self.tray_icon.showMessage(
-                "GemType",
-                "Hotkey pressed! Processing your request...",
-                QSystemTrayIcon.Information,
-                2000
+            self._handle_api_error(
+                "Critical Error",
+                f"A critical error occurred: {str(e)}"
             )
-        
-        # TODO: Implement the actual hotkey action
-        self.statusBar().showMessage("Hotkey pressed!", 3000)
     
     def perform_quick_action(self):
         """Perform a quick action (placeholder for now)."""
@@ -465,16 +487,26 @@ class MainWindow(QMainWindow):
         layout.addWidget(info_group)
         layout.addStretch()
         
+    def _handle_api_error(self, title, message):
+        """Show an API error message to the user."""
+        logger.error(f"{title}: {message}")
+        if config.get("show_notifications", True):
+            self.tray_icon.showMessage(
+                f"GemType - {title}",
+                message,
+                QSystemTrayIcon.Critical,
+                5000  # Show for 5 seconds
+            )
+    
     def _show_api_key_warning(self):
         """Show a warning if API key is not set."""
         QMessageBox.warning(
             self,
-            
             "API Key Required",
             "GemType brings the power of Google's Gemini AI to your fingertips.<br>"
             " 🖱️ <b>How to use:</b> <br>"
-            "1. Please set your Google Gemini API key in the Settings to use GemType."
-            "You can get an API key from: <br> https://aistudio.google.com/app/apikey<br> <br>"
+            "1. Please set your Google Gemini API key in the Settings to use GemType.<br>"
+            "You can get an API key from: <a href='https://aistudio.google.com/app/apikey'>Google AI Studio</a><br><br>"
             "2. Type and copy your text anywhere<br>"
             "3. Press <b>Ctrl+Alt+Space</b> (or your custom hotkey)<br>"
             "4. Just wait and the AI will process your input and type the response shortly.<br>",
@@ -658,6 +690,40 @@ class MainWindow(QMainWindow):
             self.status_label.setText("Service: <b>Stopped</b>")
             self.start_btn.setText("Start Service")
         else:
+            # Check if API key is set and valid
+            if not config.get("api_key"):
+                QMessageBox.critical(
+                    self,
+                    "API Key Required",
+                    "Please set your Google Gemini API key in Settings before starting the service.\n\n"
+                    "You can get an API key from: https://aistudio.google.com/app/apikey"
+                )
+                self.show_settings()
+                return
+                
+            # Test the API key
+            from core.gemini import GeminiClient
+            try:
+                client = GeminiClient(api_key=config.get("api_key"), model=config.get("model"))
+                if not client.test_connection():
+                    QMessageBox.critical(
+                        self,
+                        "Invalid API Key",
+                        "The provided API key is invalid or doesn't have the required permissions.\n\n"
+                        "Please check your API key and try again."
+                    )
+                    self.show_settings()
+                    return
+            except Exception as e:
+                logger.error(f"API key validation failed: {e}")
+                QMessageBox.critical(
+                    self,
+                    "API Key Validation Failed",
+                    f"Failed to validate API key: {str(e)}\n\n"
+                    "Please check your internet connection and API key."
+                )
+                return
+                
             try:
                 self.hotkey_manager.start()
                 self.status_indicator.setStyleSheet("color: #4CAF50; font-size: 16px;")

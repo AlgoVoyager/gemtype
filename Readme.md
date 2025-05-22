@@ -44,9 +44,31 @@ GemType is a desktop application that brings the power of Google's Gemini AI to 
    python main.py
    ```
 
-### Method 2: Download Executable (Windows)
+### Method 2: Single Script Version (Quick Start)
 
-1. Download the latest release from the [Releases](https://github.com/yourusername/gemtype/releases) page
+For a quick start without installing the full application, you can use the single-script version:
+
+1. Download the latest `gemtype_single.py` from the [Releases](https://github.com/yourusername/gemtype/releases) page
+2. Install the required dependencies:
+   ```bash
+   pip install google-generativeai pyperclip pyautogui keyboard python-dotenv
+   ```
+3. Create a `.env` file in the same directory with your Gemini API key:
+   ```env
+   GEMINI_API_KEY=your_api_key_here
+   ```
+   Replace `your_api_key_here` with your actual Gemini API key from [Google AI Studio](https://aistudio.google.com/app/apikey).
+
+4. Run the script:
+   ```bash
+   python gemtype_single.py
+   ```
+
+   The script will automatically load your API key from the `.env` file.
+
+### Method 3: Download Executable (Windows)
+
+1. Download the latest release from the [Releases](https://github.com/AlgoVoyager/gemtype/releases) page
 2. Run the installer or extract the portable version
 3. Launch `GemType.exe`
 
@@ -60,12 +82,11 @@ GemType is a desktop application that brings the power of Google's Gemini AI to 
 ## 🎯 Usage
 
 1. **Basic Usage**
-   - Select text (optional)
+   - Type your text and copy it to clipboard
    - Press `Ctrl+Alt+Space` (or your custom hotkey)
    - The AI will process your input and type the response
 
 2. **System Tray**
-   - Left-click: Show/hide the main window
    - Right-click: Access the context menu
    - Double-click: Show the main window
 
