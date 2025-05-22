@@ -49,7 +49,7 @@ GemType is a desktop application that brings the power of Google's Gemini AI to 
 
 For a quick start without installing the full application, you can use the single-script version:
 
-1. Download the latest `gemtype_single.py` from the [Releases](https://github.com/yourusername/gemtype/releases) page
+1. Download the latest `gemtype_single.py` from the [Releases](https://github.com/AlgoVoyager/gemtype/releases) page
 2. Install the required dependencies:
    ```bash
    pip install google-generativeai pyperclip pyautogui keyboard python-dotenv
