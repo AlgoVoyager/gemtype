@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QKeySequence, QIntValidator
-
+from PyQt5.QtWidgets import QStyle
 from core.config import config
 
 # Configure logging
@@ -27,7 +27,7 @@ class SettingsDialog(QDialog):
         super().__init__(parent)
         
         self.setWindowTitle("Settings")
-        self.setMinimumSize(600, 500)
+        self.setMinimumSize(600, 550)
         
         # Initialize config
         self.config = config
@@ -39,16 +39,31 @@ class SettingsDialog(QDialog):
             "model": config.get("model", "gemini-2.5-flash-preview-05-20"),
             "auto_start": config.get("auto_start", True),
             "show_notifications": config.get("show_notifications", True),
-            "theme": config.get("theme", "system"),
+            "theme": config.get("theme", "light"),
         }
         
         # Initialize UI
         self._init_ui()
-        
+        self._apply_theme(self.original_settings["theme"])
+    
         # Load current settings
         self._load_settings()
     
     def _init_ui(self):
+        # Set application icon
+        try:
+            # Try to load icon from local file
+            icon_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'assets', 'icons', 'app_icon.jpg')
+            if os.path.exists(icon_path):
+                self.setWindowIcon(QIcon(icon_path))
+            else:
+                # Fallback to resource path
+                self.setWindowIcon(QIcon(":/assets/icons/app_icon.ico"))
+        except Exception as e:
+            logger.warning(f"Failed to load application icon: {e}")
+            # Fallback to system theme icon
+            self.setWindowIcon(self.style().standardIcon(QStyle.SP_ComputerIcon))
+
         """Initialize the user interface."""
         # Create main layout
         main_layout = QVBoxLayout(self)
@@ -229,65 +244,187 @@ class SettingsDialog(QDialog):
         main_layout.addWidget(self.button_box)
         
         # Apply styles
-        self._apply_styles()
+        self._apply_theme()
     
-    def _apply_styles(self):
-        """Apply custom styles to the dialog."""
-        self.setStyleSheet("""
-            QDialog {
-                background-color: #1e1e2e;
-                color: #e0e0e0;
-            }
-            QGroupBox {
-                border: 1px solid #e0e0e0;
-                border-radius: 4px;
-                margin-top: 10px;
-                padding-top: 15px;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 10px;
-                padding: 0 5px;
-            }
-            QLineEdit, QComboBox {
-                padding: 5px;
-                border: 1px solid #ccc;
-                border-radius: 3px;
-                min-width: 200px;
-            }
-            QPushButton {
-                padding: 5px 10px;
-                background-color: #4285f4;
-                color: white;
-                border: none;
-                border-radius: 3px;
-            }
-            QPushButton:hover {
-                background-color: #3367d6;
-            }
-            QPushButton:pressed {
-                background-color: #2a56c6;
-            }
-            QTabWidget::pane {
-                border: 1px solid #e0e0e0;
-                border-radius: 4px;
-                background: white;
-                margin-top: 10px;
-            }
-            QTabBar::tab {
-                background: #e0e0e0;
-                border: 1px solid #ccc;
-                padding: 8px 16px;
-                border-top-left-radius: 4px;
-                border-top-right-radius: 4px;
-                margin-right: 2px;
-            }
-            QTabBar::tab:selected {
-                background: white;
-                border-bottom: 2px solid #4285f4;
-            }
-        """)
-    
+    def _apply_theme(self, theme_name=None):
+        """Apply the selected theme."""
+        if theme_name is None:
+            theme_name = config.get("theme", "light").lower()  # Default to light theme
+            
+        if theme_name == "dark":
+            # Dark theme with #0C1226 as base
+            self.setStyleSheet("""
+                /* Base colors */
+                QMainWindow, QWidget, QDialog {
+                    background-color: #0C1226;
+                    color: #e0e0e0;
+                }
+                
+                /* Buttons */
+                QPushButton {
+                    background-color: #d1a300;
+                    color: #000000;
+                    border: none;
+                    padding: 8px 16px;
+                    border-radius: 4px;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #e6b400;
+                }
+                QPushButton:pressed {
+                    background-color: #cc9f00;
+                }
+                
+                /* Tabs */
+                QTabWidget::pane {
+                    border: 1px solid #1a237e;
+                    border-radius: 4px;
+                    background: #0a0f1f;
+                    margin-top: 10px;
+                }
+                QTabBar::tab {
+                    background: #1a237e;
+                    color: #a0a0b0;
+                    border: 1px solid #1a237e;
+                    padding: 8px 16px;
+                    border-top-left-radius: 4px;
+                    border-top-right-radius: 4px;
+                    margin-right: 2px;
+                }
+                QTabBar::tab:selected {
+                    background: #0C1226;
+                    color: #ffffff;
+                    border-bottom: 2px solid #ffc800;
+                }
+                
+                /* Group Boxes */
+                QGroupBox {
+                    border: 1px solid #1a237e;
+                    border-radius: 4px;
+                    margin-top: 10px;
+                    padding: 15px;
+                    background: #0a0f1f;
+                }
+                QGroupBox::title {
+                    color: #ffffff;
+                    subcontrol-origin: margin;
+                    left: 10px;
+                    padding: 0 5px;
+                }
+                
+                /* Input Fields */
+                QLineEdit, QTextEdit, QComboBox {
+                    background-color: #0a0f1f;
+                    color: #e0e0e0;
+                    border: 1px solid #1a237e;
+                    border-radius: 3px;
+                    padding: 5px;
+                }
+                
+                /* Labels */
+                QLabel {
+                    color: #e0e0e0;
+                }
+                QLabel[accessibleName="helpText"] {
+                    color: #a0a0b0;
+                    font-size: 9pt;
+                }
+                
+                /* Status Bar */
+                QStatusBar {
+                    background: #0a0f1f;
+                    color: #e0e0e0;
+                    border-top: 1px solid #1a237e;
+                }
+            """)
+        else:
+            # Light theme (default)
+            self.setStyleSheet("""
+                /* Base colors */
+                QMainWindow, QWidget, QDialog {
+                    background-color: #f0f0f0;
+                    color: #333333;
+                }
+                
+                /* Buttons */
+                QPushButton {
+                    background-color: #ffd749;
+                    color: #000000;
+                    border: none;
+                    padding: 8px 16px;
+                    border-radius: 4px;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #e6b400;
+                }
+                QPushButton:pressed {
+                    background-color: #cc9f00;
+                }
+                
+                /* Tabs */
+                QTabWidget::pane {
+                    border: 1px solid #e0e0e0;
+                    border-radius: 4px;
+                    background: white;
+                    margin-top: 10px;
+                }
+                QTabBar::tab {
+                    background: #e0e0e0;
+                    color: #666666;
+                    border: 1px solid #e0e0e0;
+                    padding: 8px 16px;
+                    border-top-left-radius: 4px;
+                    border-top-right-radius: 4px;
+                    margin-right: 2px;
+                }
+                QTabBar::tab:selected {
+                    background: white;
+                    color: #333333;
+                    border-bottom: 2px solid #ffc800;
+                }
+                
+                /* Group Boxes */
+                QGroupBox {
+                    border: 1px solid #e0e0e0;
+                    border-radius: 4px;
+                    margin-top: 10px;
+                    padding: 15px;
+                    background:  #f0f0f0;
+                }
+                QGroupBox::title {
+                    color: #333333;
+                    subcontrol-origin: margin;
+                    left: 10px;
+                    padding: 0 5px;
+                }
+                
+                /* Input Fields */
+                QLineEdit, QTextEdit, QComboBox {
+                    background-color: white;
+                    color: #333333;
+                    border: 1px solid #e0e0e0;
+                    border-radius: 3px;
+                    padding: 5px;
+                }
+                
+                /* Labels */
+                QLabel {
+                    color: #333333;
+                }
+                QLabel[accessibleName="helpText"] {
+                    color: #666666;
+                    font-size: 9pt;
+                }
+                
+                /* Status Bar */
+                QStatusBar {
+                    background: #fefefe;
+                    color: #333333;
+                    border-top: 1px solid #e0e0e0;
+                }
+            """)  
     def _load_settings(self):
         """Load current settings into the UI."""
         # API Settings
@@ -306,12 +443,22 @@ class SettingsDialog(QDialog):
         theme_index = self.theme_combo.findText(theme)
         if theme_index >= 0:
             self.theme_combo.setCurrentIndex(theme_index)
-            
+            # Apply the theme immediately when loading settings
+            if hasattr(self.parent(), '_apply_theme'):
+                self.parent()._apply_theme(theme.lower())
+                
         self.auto_start_cb.setChecked(self.original_settings["auto_start"])
         self.notifications_cb.setChecked(self.original_settings["show_notifications"])
-    
+        
     def on_theme_changed(self, theme_name):
         """Handle theme changes in the settings dialog."""
+        # Apply theme to settings dialog
+        self._apply_theme(theme_name.lower())
+        
+        # Apply theme to main window if it exists
+        if hasattr(self.parent(), '_apply_theme'):
+            self.parent()._apply_theme(theme_name.lower())
+        
         # Mark settings as changed
         self.on_settings_changed()
     

@@ -10,12 +10,13 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt, QSize, pyqtSignal, QTimer, QUrl
 from PyQt5.QtGui import QIcon, QPixmap, QPalette, QColor, QDesktopServices, QFont
+from PyQt5.QtWidgets import QStyle
 
 from core.config import config
 from core.hotkey import HotkeyManager
 from .tray_icon import TrayIcon
 from .settings_dialog import SettingsDialog
-
+    
 # Configure logging
 logger = logging.getLogger(__name__)
 
@@ -36,7 +37,7 @@ class MainWindow(QMainWindow):
         
         # Set up the UI
         self._init_ui()
-        
+        self._apply_theme(config.get("theme", "light"))
         # Set up the system tray
         self._init_tray_icon()
         
@@ -61,12 +62,12 @@ class MainWindow(QMainWindow):
         # Set application icon
         try:
             # Try to load icon from local file
-            icon_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'assets', 'icons', 'app_icon.jpg')
+            icon_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'assets', 'icons', 'app_icon.ico')
             if os.path.exists(icon_path):
                 self.setWindowIcon(QIcon(icon_path))
             else:
                 # Fallback to resource path
-                self.setWindowIcon(QIcon(":/assets/icons/app_icon.jpg"))
+                self.setWindowIcon(QIcon(":/assets/icons/app_icon.ico"))
         except Exception as e:
             logger.warning(f"Failed to load application icon: {e}")
             # Fallback to system theme icon
@@ -269,7 +270,7 @@ class MainWindow(QMainWindow):
             }
             QTabBar::tab:selected {
                 background: white;
-                border-bottom: 2px solid #4285f4;
+                border-bottom: 2px solid #ffc800;
             }
         """)
     
@@ -513,145 +514,324 @@ class MainWindow(QMainWindow):
             QMessageBox.Ok
         )
         self.show_settings()
-        
+
     def _apply_theme(self, theme_name=None):
         """Apply the selected theme."""
         if theme_name is None:
-            theme_name = config.get("theme", "system").lower()
-        
+            theme_name = config.get("theme", "light").lower()  # Default to light theme
+            
         if theme_name == "dark":
+            # Dark theme with #0C1226 as base
             self.setStyleSheet("""
-                QMainWindow, QWidget {
-                    background-color: #2b2b2b;
-                    color: #ffffff;
+                /* Base colors */
+                QMainWindow, QWidget, QDialog {
+                    background-color: #0C1226;
+                    color: #e0e0e0;
                 }
-                QGroupBox {
-                    border: 1px solid #444;
-                    border-radius: 5px;
-                    margin-top: 10px;
-                    padding: 15px;
-                    background-color: #333333;
-                }
-                QGroupBox::title {
-                    subcontrol-origin: margin;
-                    left: 10px;
-                    padding: 0 5px;
-                    color: #ffffff;
-                }
+                
+                /* Buttons */
                 QPushButton {
-                    background-color: #4a90e2;
-                    color: white;
+                    background-color: #d1a300;
+                    color: #000000;
                     border: none;
                     padding: 8px 16px;
                     border-radius: 4px;
-                    min-width: 100px;
+                    font-weight: bold;
                 }
                 QPushButton:hover {
-                    background-color: #357abd;
+                    background-color: #e6b400;
                 }
-                QPushButton:disabled {
-                    background-color: #555555;
+                QPushButton:pressed {
+                    background-color: #cc9f00;
                 }
+                
+                /* Tabs */
                 QTabWidget::pane {
-                    border: 1px solid #444;
-                    background: #2b2b2b;
+                    border: 1px solid #1a237e;
+                    border-radius: 4px;
+                    background: #0a0f1f;
+                    margin-top: 10px;
                 }
                 QTabBar::tab {
-                    background: #3c3c3c;
-                    color: #ffffff;
+                    background: #1a237e;
+                    color: #a0a0b0;
+                    border: 1px solid #1a237e;
                     padding: 8px 16px;
-                    border: 1px solid #444;
-                    border-bottom: none;
                     border-top-left-radius: 4px;
                     border-top-right-radius: 4px;
+                    margin-right: 2px;
                 }
                 QTabBar::tab:selected {
-                    background: #2b2b2b;
-                    border-bottom: 2px solid #4a90e2;
-                }
-                QLabel[accessibleName="helpText"] {
-                    color: #aaaaaa;
-                    font-size: 9pt;
-                }
-                QTextEdit, QLineEdit, QComboBox {
-                    background-color: #3c3c3c;
+                    background: #0C1226;
                     color: #ffffff;
-                    border: 1px solid #555;
+                    border-bottom: 2px solid #ffc800;
+                }
+                
+                /* Group Boxes */
+                QGroupBox {
+                    border: 1px solid #1a237e;
+                    border-radius: 4px;
+                    margin-top: 10px;
+                    padding: 15px;
+                    background: #0a0f1f;
+                }
+                QGroupBox::title {
+                    color: #ffffff;
+                    subcontrol-origin: margin;
+                    left: 10px;
+                    padding: 0 5px;
+                }
+                
+                /* Input Fields */
+                QLineEdit, QTextEdit, QComboBox {
+                    background-color: #0a0f1f;
+                    color: #e0e0e0;
+                    border: 1px solid #1a237e;
                     border-radius: 3px;
                     padding: 5px;
                 }
+                
+                /* Labels */
+                QLabel {
+                    color: #e0e0e0;
+                }
+                QLabel[accessibleName="helpText"] {
+                    color: #a0a0b0;
+                    font-size: 9pt;
+                }
+                
+                /* Status Bar */
                 QStatusBar {
-                    background: #333333;
-                    color: #ffffff;
+                    background: #0a0f1f;
+                    color: #e0e0e0;
+                    border-top: 1px solid #1a237e;
                 }
             """)
-        elif theme_name == "light":
+        else:
+            # Light theme (default)
             self.setStyleSheet("""
-                QMainWindow, QWidget {
-                    background-color: #f5f5f5;
+                /* Base colors */
+                QMainWindow, QWidget, QDialog {
+                    background-color: #f0f0f0;
                     color: #333333;
                 }
-                QGroupBox {
-                    border: 1px solid #e0e0e0;
-                    border-radius: 5px;
-                    margin-top: 10px;
-                    padding: 15px;
-                    background-color: #ffffff;
-                }
-                QGroupBox::title {
-                    subcontrol-origin: margin;
-                    left: 10px;
-                    padding: 0 5px;
-                    color: #333333;
-                }
+                
+                /* Buttons */
                 QPushButton {
-                    background-color: #4a90e2;
-                    color: white;
+                    background-color: #ffd749;
+                    color: #000000;
                     border: none;
                     padding: 8px 16px;
                     border-radius: 4px;
-                    min-width: 100px;
+                    font-weight: bold;
                 }
                 QPushButton:hover {
-                    background-color: #357abd;
+                    background-color: #e6b400;
                 }
-                QPushButton:disabled {
-                    background-color: #cccccc;
+                QPushButton:pressed {
+                    background-color: #cc9f00;
                 }
+                
+                /* Tabs */
                 QTabWidget::pane {
                     border: 1px solid #e0e0e0;
-                    background: #ffffff;
+                    border-radius: 4px;
+                    background: white;
+                    margin-top: 10px;
                 }
                 QTabBar::tab {
-                    background: #f0f0f0;
-                    color: #333333;
-                    padding: 8px 16px;
+                    background: #e0e0e0;
+                    color: #666666;
                     border: 1px solid #e0e0e0;
-                    border-bottom: none;
+                    padding: 8px 16px;
                     border-top-left-radius: 4px;
                     border-top-right-radius: 4px;
+                    margin-right: 2px;
                 }
                 QTabBar::tab:selected {
-                    background: #ffffff;
-                    border-bottom: 2px solid #4a90e2;
+                    background: white;
+                    color: #333333;
+                    border-bottom: 2px solid #ffc800;
+                }
+                
+                /* Group Boxes */
+                QGroupBox {
+                    border: 1px solid #e0e0e0;
+                    border-radius: 4px;
+                    margin-top: 10px;
+                    padding: 15px;
+                    background:  #f0f0f0;
+                }
+                QGroupBox::title {
+                    color: #333333;
+                    subcontrol-origin: margin;
+                    left: 10px;
+                    padding: 0 5px;
+                }
+                
+                /* Input Fields */
+                QLineEdit, QTextEdit, QComboBox {
+                    background-color: white;
+                    color: #333333;
+                    border: 1px solid #e0e0e0;
+                    border-radius: 3px;
+                    padding: 5px;
+                }
+                
+                /* Labels */
+                QLabel {
+                    color: #333333;
                 }
                 QLabel[accessibleName="helpText"] {
                     color: #666666;
                     font-size: 9pt;
                 }
-                QTextEdit, QLineEdit, QComboBox {
-                    background-color: #ffffff;
-                    color: #333333;
-                    border: 1px solid #ddd;
-                    border-radius: 3px;
-                    padding: 5px;
-                }
+                
+                /* Status Bar */
                 QStatusBar {
-                    background: #f0f0f0;
+                    background: #fefefe;
                     color: #333333;
                     border-top: 1px solid #e0e0e0;
                 }
-            """)
+            """)  
+    # def _apply_theme(self, theme_name=None):
+    #     """Apply the selected theme."""
+    #     if theme_name is None:
+    #         theme_name = config.get("theme", "system").lower()
+        
+    #     if theme_name == "dark":
+    #         self.setStyleSheet("""
+    #             QMainWindow, QWidget {
+    #                 background-color: #2b2b2b;
+    #                 color: #ffffff;
+    #             }
+    #             QGroupBox {
+    #                 border: 1px solid #444;
+    #                 border-radius: 5px;
+    #                 margin-top: 10px;
+    #                 padding: 15px;
+    #                 background-color: #333333;
+    #             }
+    #             QGroupBox::title {
+    #                 subcontrol-origin: margin;
+    #                 left: 10px;
+    #                 padding: 0 5px;
+    #                 color: #ffffff;
+    #             }
+    #             QPushButton {
+    #                 background-color: #4a90e2;
+    #                 color: white;
+    #                 border: none;
+    #                 padding: 8px 16px;
+    #                 border-radius: 4px;
+    #                 min-width: 100px;
+    #             }
+    #             QPushButton:hover {
+    #                 background-color: #357abd;
+    #             }
+    #             QPushButton:disabled {
+    #                 background-color: #555555;
+    #             }
+    #             QTabWidget::pane {
+    #                 border: 1px solid #444;
+    #                 background: #2b2b2b;
+    #             }
+    #             QTabBar::tab {
+    #                 background: #3c3c3c;
+    #                 color: #ffffff;
+    #                 padding: 8px 16px;
+    #                 border: 1px solid #444;
+    #                 border-bottom: none;
+    #                 border-top-left-radius: 4px;
+    #                 border-top-right-radius: 4px;
+    #             }
+    #             QTabBar::tab:selected {
+    #                 background: #2b2b2b;
+    #                 border-bottom: 2px solid #4a90e2;
+    #             }
+    #             QLabel[accessibleName="helpText"] {
+    #                 color: #aaaaaa;
+    #                 font-size: 9pt;
+    #             }
+    #             QTextEdit, QLineEdit, QComboBox {
+    #                 background-color: #3c3c3c;
+    #                 color: #ffffff;
+    #                 border: 1px solid #555;
+    #                 border-radius: 3px;
+    #                 padding: 5px;
+    #             }
+    #             QStatusBar {
+    #                 background: #333333;
+    #                 color: #ffffff;
+    #             }
+    #         """)
+    #     elif theme_name == "light":
+    #         self.setStyleSheet("""
+    #             QMainWindow, QWidget {
+    #                 background-color: #f5f5f5;
+    #                 color: #333333;
+    #             }
+    #             QGroupBox {
+    #                 border: 1px solid #e0e0e0;
+    #                 border-radius: 5px;
+    #                 margin-top: 10px;
+    #                 padding: 15px;
+    #                 background-color: #ffffff;
+    #             }
+    #             QGroupBox::title {
+    #                 subcontrol-origin: margin;
+    #                 left: 10px;
+    #                 padding: 0 5px;
+    #                 color: #333333;
+    #             }
+    #             QPushButton {
+    #                 background-color: #4a90e2;
+    #                 color: white;
+    #                 border: none;
+    #                 padding: 8px 16px;
+    #                 border-radius: 4px;
+    #                 min-width: 100px;
+    #             }
+    #             QPushButton:hover {
+    #                 background-color: #357abd;
+    #             }
+    #             QPushButton:disabled {
+    #                 background-color: #cccccc;
+    #             }
+    #             QTabWidget::pane {
+    #                 border: 1px solid #e0e0e0;
+    #                 background: #ffffff;
+    #             }
+    #             QTabBar::tab {
+    #                 background: #f0f0f0;
+    #                 color: #333333;
+    #                 padding: 8px 16px;
+    #                 border: 1px solid #e0e0e0;
+    #                 border-bottom: none;
+    #                 border-top-left-radius: 4px;
+    #                 border-top-right-radius: 4px;
+    #             }
+    #             QTabBar::tab:selected {
+    #                 background: #ffffff;
+    #                 border-bottom: 2px solid #4a90e2;
+    #             }
+    #             QLabel[accessibleName="helpText"] {
+    #                 color: #666666;
+    #                 font-size: 9pt;
+    #             }
+    #             QTextEdit, QLineEdit, QComboBox {
+    #                 background-color: #ffffff;
+    #                 color: #333333;
+    #                 border: 1px solid #ddd;
+    #                 border-radius: 3px;
+    #                 padding: 5px;
+    #             }
+    #             QStatusBar {
+    #                 background: #f0f0f0;
+    #                 color: #333333;
+    #                 border-top: 1px solid #e0e0e0;
+    #             }
+    #         """)
             
     def closeEvent(self, event):
         """Handle window close event."""
