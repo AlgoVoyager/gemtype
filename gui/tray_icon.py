@@ -5,6 +5,7 @@ import logging
 from PyQt5.QtWidgets import QSystemTrayIcon, QMenu, QAction
 from PyQt5.QtCore import pyqtSignal, QObject
 from PyQt5.QtGui import QIcon, QPixmap
+
 import os
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -20,12 +21,19 @@ class TrayIcon(QSystemTrayIcon):
         """Initialize the tray icon."""
         # Create a default icon if needed
         try:
-            icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'icons', 'tray_icon.png')
+            # Try to load .ico file first
+            icon_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'assets', 'icons', 'app_icon.ico')
             if os.path.exists(icon_path):
                 icon = QIcon(icon_path)
             else:
-                raise FileNotFoundError
-        except:
+                # Fallback to .jpg if .ico not found
+                icon_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'assets', 'icons', 'tray_icon.jpg')
+                if os.path.exists(icon_path):
+                    icon = QIcon(icon_path)
+                else:
+                    raise FileNotFoundError("No icon file found")
+        except Exception as e:
+            logger.warning(f"Failed to load tray icon: {e}")
             # Create a simple icon as fallback
             pixmap = QPixmap(64, 64)
             pixmap.fill("#4285f4")
@@ -51,8 +59,8 @@ class TrayIcon(QSystemTrayIcon):
         
         # Add actions to menu
         self.menu.addAction(self.show_action)
-        self.menu.addSeparator()
-        self.menu.addAction(self.settings_action)
+        # self.menu.addSeparator()
+        # self.menu.addAction(self.settings_action)
         self.menu.addSeparator()
         self.menu.addAction(self.quit_action)
         

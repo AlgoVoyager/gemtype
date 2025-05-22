@@ -95,6 +95,15 @@ class HotkeyManager(QObject):
         logger.debug("Hotkey pressed: %s", self._hotkey)
         self.hotkey_triggered.emit()
     
+    def is_running(self) -> bool:
+        """Check if the hotkey manager is running.
+        
+        Returns:
+            bool: True if the hotkey manager is running, False otherwise
+        """
+        with self._lock:
+            return self._is_registered
+    
     def start(self) -> None:
         """Start the hotkey manager."""
         with self._lock:

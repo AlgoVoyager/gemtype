@@ -22,12 +22,12 @@ class Icons:
     
     # Icon paths
     _icon_paths = {
-        'app_icon': 'assets/icons/app_icon.png',
-        'tray_icon': 'assets/icons/tray_icon.png',
-        'settings': 'assets/icons/settings.png',
-        'exit': 'assets/icons/exit.png',
-        'status_active': 'assets/icons/status_active.png',
-        'status_inactive': 'assets/icons/status_inactive.png',
+        'app_icon': 'assets/icons/app_icon.jpg',
+        'tray_icon': 'assets/icons/tray_icon.jpg',
+        'settings': 'assets/icons/settings.jpg',
+        'exit': 'assets/icons/exit.jpg',
+        'status_active': 'assets/icons/status_active.jpg',
+        'status_inactive': 'assets/icons/status_inactive.jpg',
     }
     
     # Cache for loaded icons

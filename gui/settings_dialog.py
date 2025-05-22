@@ -2,6 +2,7 @@
 Settings dialog for GemType.
 """
 import logging
+from core.config import config
 from PyQt5.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QFormLayout, QLabel, QLineEdit,
     QPushButton, QCheckBox, QComboBox, QGroupBox, QDialogButtonBox,
@@ -25,8 +26,11 @@ class SettingsDialog(QDialog):
         """Initialize the settings dialog."""
         super().__init__(parent)
         
-        self.setWindowTitle("GemType Settings")
+        self.setWindowTitle("Settings")
         self.setMinimumSize(600, 500)
+        
+        # Initialize config
+        self.config = config
         
         # Store original settings to detect changes
         self.original_settings = {
@@ -49,47 +53,63 @@ class SettingsDialog(QDialog):
         # Create main layout
         main_layout = QVBoxLayout(self)
         
-        # Create tab widget
+        # Create tabs
         self.tabs = QTabWidget()
         
-        # API Settings Tab
+        # ===== API Tab =====
         api_tab = QWidget()
         api_layout = QVBoxLayout(api_tab)
+        api_layout.setContentsMargins(20, 20, 20, 20)
+        api_layout.setSpacing(15)
         
-        # API Key Group
-        api_key_group = QGroupBox("API Settings")
-        api_key_layout = QFormLayout()
+        # API Settings Group
+        api_group = QGroupBox("API Settings")
+        api_form_layout = QFormLayout(api_group)
+        api_form_layout.setContentsMargins(15, 25, 15, 15)
+        api_form_layout.setSpacing(10)
         
+        # API Key
+        api_key_layout = QHBoxLayout()
         self.api_key_edit = QLineEdit()
         self.api_key_edit.setEchoMode(QLineEdit.Password)
         self.api_key_edit.textChanged.connect(self.on_settings_changed)
         
-        self.show_api_key_cb = QCheckBox("Show API Key")
-        self.show_api_key_cb.toggled.connect(self.toggle_api_key_visibility)
+        self.api_key_btn = QPushButton("Show")
+        self.api_key_btn.setCheckable(True)
+        self.api_key_btn.toggled.connect(self.toggle_api_key_visibility)
         
-        api_key_layout.addRow("API Key:", self.api_key_edit)
-        api_key_layout.addRow("", self.show_api_key_cb)
+        api_key_layout.addWidget(self.api_key_edit)
+        api_key_layout.addWidget(self.api_key_btn)
+        
+        api_key_label = QLabel()
+        api_key_label.setText("<b>API Key:</b><br><span style='font-size: 9pt; color: #666;'>Enter your API key</span>")
+        api_key_label.setTextFormat(Qt.RichText)
+        api_form_layout.addRow(api_key_label, api_key_layout)
         
         # Model selection
         self.model_combo = QComboBox()
         self.model_combo.addItems(["gemini-2.5-flash-preview-05-20", "gemini-1.5-pro"])
         self.model_combo.currentTextChanged.connect(self.on_settings_changed)
         
-        api_key_layout.addRow("Model:", self.model_combo)
-        
-        api_key_group.setLayout(api_key_layout)
+        model_label = QLabel("<b>Model:</b>")
+        model_label.setTextFormat(Qt.RichText)
+        api_form_layout.addRow(model_label, self.model_combo)
         
         # Add API group to API tab
-        api_layout.addWidget(api_key_group)
+        api_layout.addWidget(api_group)
         api_layout.addStretch()
         
-        # Hotkey Tab
+        # ===== Hotkey Tab =====
         hotkey_tab = QWidget()
         hotkey_layout = QVBoxLayout(hotkey_tab)
+        hotkey_layout.setContentsMargins(20, 20, 20, 20)
+        hotkey_layout.setSpacing(15)
         
-        # Hotkey Group
+        # Hotkey settings
         hotkey_group = QGroupBox("Hotkey Settings")
-        hotkey_form_layout = QFormLayout()
+        hotkey_form = QFormLayout(hotkey_group)
+        hotkey_form.setContentsMargins(15, 25, 15, 15)
+        hotkey_form.setSpacing(10)
         
         self.hotkey_edit = QLineEdit()
         self.hotkey_edit.setReadOnly(True)
@@ -97,32 +117,41 @@ class SettingsDialog(QDialog):
         self.hotkey_edit.keyPressEvent = self.on_hotkey_press
         self.hotkey_edit.setToolTip("Press the key combination you want to use")
         
-        self.reset_hotkey_btn = QPushButton("Reset to Default")
+        self.reset_hotkey_btn = QPushButton("Reset")
         self.reset_hotkey_btn.clicked.connect(self.reset_hotkey)
         
         hotkey_btn_layout = QHBoxLayout()
         hotkey_btn_layout.addWidget(self.hotkey_edit)
         hotkey_btn_layout.addWidget(self.reset_hotkey_btn)
         
-        hotkey_form_layout.addRow("Hotkey:", hotkey_btn_layout)
-        hotkey_group.setLayout(hotkey_form_layout)
+        hotkey_label = QLabel()
+        hotkey_label.setText("<b>Hotkey:</b><br><span style='font-size: 9pt; color: #666;'>Press the key combination you want to use</span>")
+        hotkey_label.setTextFormat(Qt.RichText)
+        hotkey_form.addRow(hotkey_label, hotkey_btn_layout)
         
-        # Add hotkey group to hotkey tab
         hotkey_layout.addWidget(hotkey_group)
         hotkey_layout.addStretch()
         
-        # Application Tab
+        # ===== Application Tab =====
         app_tab = QWidget()
         app_layout = QVBoxLayout(app_tab)
+        app_layout.setContentsMargins(20, 20, 20, 20)
+        app_layout.setSpacing(15)
         
         # Application Settings Group
         app_group = QGroupBox("Application Settings")
-        app_form_layout = QFormLayout()
+        app_form_layout = QFormLayout(app_group)
+        app_form_layout.setContentsMargins(15, 25, 15, 15)
+        app_form_layout.setSpacing(10)
         
         # Theme selection
         self.theme_combo = QComboBox()
-        self.theme_combo.addItems(["system", "light", "dark"])
-        self.theme_combo.currentTextChanged.connect(self.on_settings_changed)
+        self.theme_combo.addItems(["System", "Light", "Dark"])
+        self.theme_combo.currentTextChanged.connect(self.on_theme_changed)
+        
+        theme_label = QLabel("<b>Theme:</b>")
+        theme_label.setTextFormat(Qt.RichText)
+        app_form_layout.addRow(theme_label, self.theme_combo)
         
         # Auto-start option
         self.auto_start_cb = QCheckBox("Start GemType when I log in")
@@ -133,20 +162,20 @@ class SettingsDialog(QDialog):
         self.notifications_cb.stateChanged.connect(self.on_settings_changed)
         
         # Add widgets to form layout
-        app_form_layout.addRow("Theme:", self.theme_combo)
         app_form_layout.addRow(self.auto_start_cb)
         app_form_layout.addRow(self.notifications_cb)
-        
-        app_group.setLayout(app_form_layout)
         
         # Add app group to app tab
         app_layout.addWidget(app_group)
         app_layout.addStretch()
         
-        # Add tabs to tab widget
+        # ===== Add Tabs =====
         self.tabs.addTab(api_tab, "API")
         self.tabs.addTab(hotkey_tab, "Hotkey")
         self.tabs.addTab(app_tab, "Application")
+        
+        # Add main layout
+        main_layout.addWidget(self.tabs)
         
         # Create button box
         self.button_box = QDialogButtonBox(
@@ -156,8 +185,10 @@ class SettingsDialog(QDialog):
         self.button_box.rejected.connect(self.reject)
         self.button_box.button(QDialogButtonBox.RestoreDefaults).clicked.connect(self.restore_defaults)
         
-        # Add widgets to main layout
-        main_layout.addWidget(self.tabs)
+        # Disable save button initially (no changes yet)
+        self.button_box.button(QDialogButtonBox.Save).setEnabled(False)
+        
+        # Add button box to main layout
         main_layout.addWidget(self.button_box)
         
         # Apply styles
@@ -233,12 +264,18 @@ class SettingsDialog(QDialog):
         self.hotkey_edit.setText(self.original_settings["hotkey"])
         
         # Application settings
-        theme_index = self.theme_combo.findText(self.original_settings["theme"])
+        theme = self.original_settings["theme"].capitalize()
+        theme_index = self.theme_combo.findText(theme)
         if theme_index >= 0:
             self.theme_combo.setCurrentIndex(theme_index)
-        
+            
         self.auto_start_cb.setChecked(self.original_settings["auto_start"])
         self.notifications_cb.setChecked(self.original_settings["show_notifications"])
+    
+    def on_theme_changed(self, theme_name):
+        """Handle theme changes in the settings dialog."""
+        # Mark settings as changed
+        self.on_settings_changed()
     
     def on_settings_changed(self):
         """Handle settings changes."""
@@ -259,7 +296,7 @@ class SettingsDialog(QDialog):
             "model": self.model_combo.currentText(),
             "auto_start": self.auto_start_cb.isChecked(),
             "show_notifications": self.notifications_cb.isChecked(),
-            "theme": self.theme_combo.currentText(),
+            "theme": self.theme_combo.currentText().lower(),
         }
     
     def toggle_api_key_visibility(self, checked):
