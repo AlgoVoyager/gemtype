@@ -3,6 +3,7 @@
 GemType is a desktop application that brings the power of Google's Gemini AI to your fingertips. With a simple hotkey, you can get AI assistance anywhere on your system.
 
 ![GemType Screenshot](assets/screenshots/main_window.png)
+![settings Screenshot](assets/screenshots/settings_window.png)
 
 ## ✨ Features
 

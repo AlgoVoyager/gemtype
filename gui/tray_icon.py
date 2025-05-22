@@ -1,53 +1,52 @@
 """
 System tray icon for GemType.
 """
+import os
+import sys
 import logging
 from PyQt5.QtWidgets import QSystemTrayIcon, QMenu, QAction
-from PyQt5.QtCore import pyqtSignal, QObject
-from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5.QtCore import pyqtSignal, QObject, Qt
+from PyQt5.QtGui import QIcon, QPixmap, QPainter, QFont
 
-import os
-# Configure logging
 logger = logging.getLogger(__name__)
 
 class TrayIcon(QSystemTrayIcon):
-    """System tray icon with menu for GemType."""
+    """System tray icon for the application."""
     
-    # Signals
     show_main_window_signal = pyqtSignal()
     quit_signal = pyqtSignal()
     
     def __init__(self, parent=None):
         """Initialize the tray icon."""
-        # Create a default icon if needed
-        try:
-            # Try to load .ico file first
-            icon_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'assets', 'icons', 'app_icon.ico')
-            if os.path.exists(icon_path):
-                icon = QIcon(icon_path)
-            else:
-                # Fallback to .jpg if .ico not found
-                icon_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'assets', 'icons', 'tray_icon.jpg')
-                if os.path.exists(icon_path):
-                    icon = QIcon(icon_path)
-                else:
-                    raise FileNotFoundError("No icon file found")
-        except Exception as e:
-            logger.warning(f"Failed to load tray icon: {e}")
-            # Create a simple icon as fallback
-            pixmap = QPixmap(64, 64)
-            pixmap.fill("#4285f4")
-            icon = QIcon(pixmap)
+        super().__init__()
         
-        super().__init__(icon, parent)
+        # Initialize icon paths
+        self.icon_paths = [
+            os.path.join(os.path.dirname(os.path.dirname(__file__)), 'assets', 'icons', 'app_icon.ico'),
+            os.path.join(os.path.dirname(os.path.dirname(__file__)), 'assets', 'icons', 'tray_icon.jpg'),
+            os.path.join(os.path.dirname(os.path.dirname(__file__)), 'assets', 'icons', 'app_icon.png')
+        ]
         
-        # Set up the tray icon
+        # Add path for PyInstaller bundle
+        if getattr(sys, '_MEIPASS', None):
+            base_path = sys._MEIPASS
+            self.icon_paths.extend([
+                os.path.join(base_path, 'assets', 'icons', 'app_icon.ico'),
+                os.path.join(base_path, 'assets', 'icons', 'tray_icon.jpg'),
+                os.path.join(base_path, 'assets', 'icons', 'app_icon.png')
+            ])
+        
+        # Try to load icon from available paths
+        icon = self._load_icon()
+        
+        # Initialize system tray
+        self.setIcon(icon)
         self.setToolTip("GemType - AI Assistant")
         
         # Create the menu
         self.menu = QMenu()
         
-        # Create actions
+        # Add actions
         self.show_action = QAction("Show", self)
         self.show_action.triggered.connect(self.show_main_window_signal.emit)
         
@@ -55,12 +54,12 @@ class TrayIcon(QSystemTrayIcon):
         self.settings_action.triggered.connect(self.show_settings)
         
         self.quit_action = QAction("Quit", self)
-        self.quit_action.triggered.connect(self.quit_application)
+        self.quit_action.triggered.connect(self.quit_signal.emit)
         
         # Add actions to menu
         self.menu.addAction(self.show_action)
-        # self.menu.addSeparator()
-        # self.menu.addAction(self.settings_action)
+        self.menu.addSeparator()
+        self.menu.addAction(self.settings_action)
         self.menu.addSeparator()
         self.menu.addAction(self.quit_action)
         
@@ -72,16 +71,38 @@ class TrayIcon(QSystemTrayIcon):
         
         logger.info("Tray icon initialized")
     
+    def _load_icon(self):
+        """Try to load icon from available paths."""
+        for icon_path in self.icon_paths:
+            if os.path.exists(icon_path):
+                try:
+                    return QIcon(icon_path)
+                except Exception as e:
+                    logger.warning(f"Failed to load icon from {icon_path}: {e}")
+        
+        # If no icon found, create a default one
+        logger.warning("No valid icon found, using fallback")
+        pixmap = QPixmap(64, 64)
+        pixmap.fill(Qt.white)  # Fill with white background
+        
+        # Draw a simple icon
+        painter = QPainter(pixmap)
+        painter.setPen(Qt.blue)
+        painter.setFont(QFont('Arial', 30))
+        painter.drawText(pixmap.rect(), Qt.AlignCenter, "G")
+        painter.end()
+        
+        return QIcon(pixmap)
+    
     def on_tray_activated(self, reason):
         """Handle tray icon activation."""
         if reason == QSystemTrayIcon.DoubleClick:
             self.show_main_window_signal.emit()
     
     def show_settings(self):
-        """Show the settings dialog."""
-        # This will be connected to the main window's settings dialog
-        self.show_main_window_signal.emit()
-        # The main window will handle showing the settings dialog
+        """Show settings dialog."""
+        # This will be handled by the main window
+        pass
     
     def quit_application(self):
         """Quit the application."""
